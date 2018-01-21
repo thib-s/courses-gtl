@@ -1,0 +1,1 @@
+the green channel feels more natural. This may be a result of the human eye structure: according to the wikipedia article about color vision most of the cells in the eye sees green color. On this sample the red channel of the image show's more details than the green one. 

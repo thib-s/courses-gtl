@@ -1,0 +1,4 @@
+mean value of the image is :118.01148845
+std dev of the image is :26.9844870223
+max value of the image is :249
+max value of the image is :55

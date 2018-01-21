@@ -1,0 +1,1 @@
+gaussian noise appears stronger on green channel. This may be for the same justification that the question 2-d
