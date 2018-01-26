@@ -32,4 +32,4 @@ class RandomClassifier(BaseEstimator, ClassifierMixin):
 
     def score(self, X, y=None, **kwargs):
         # counts number of values bigger than mean
-        return accuracy_score(X, y)
+        return accuracy_score(self.predict(X), y)

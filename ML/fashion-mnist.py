@@ -6,7 +6,8 @@
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
-from lib import DistToAverageClassifier
+from lib.DistToAverageClassifier import *
+from lib.RandomClassifier import *
 
 
 # In[ ]:
@@ -41,7 +42,8 @@ def gen_image(arr):
     plt.imshow(pixels, cmap='gray')
     plt.show()
 
-classifier = DistToAverageClassifier.DistToAverageClassifier()
-classifier.fit(train_df)
+mean_classifier = DistToAverageClassifier()
+mean_classifier.fit(train_df)
 
-print (classifier.score(test_df.values[:, 1:785], test_df.values[:, 0]))
+
+print (mean_classifier.score(test_df.values[:, 1:785], test_df.values[:, 0]))
