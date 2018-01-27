@@ -25,6 +25,7 @@ class ClassifierManager:
         if os.path.isfile(STORE_PATH + ".pkl"):
             self.load_backup()
         self.logger = logging.getLogger()
+        self.train_override = False
 
     def add_trained_classifier(self,
                                key_name,
@@ -64,7 +65,7 @@ class ClassifierManager:
         :param get_xy_function: the function used to extract the x and y vector from dataframes
         :return: the element added (no deep copy for performance purposes)
         """
-        if self.dict.keys().__contains__(key_name):
+        if self.dict.keys().__contains__(key_name) and (not self.train_override):
             self.logger.info("already trained model, skipping model "+key_name)
             return self.dict[key_name]
         # get the vectors
