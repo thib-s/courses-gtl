@@ -7,15 +7,11 @@ from sklearn.metrics import mean_squared_error, accuracy_score
 class DistToAverageClassifier(BaseEstimator, ClassifierMixin):
     """An example of classifier"""
 
-    def __init__(self, intValue=0, stringParam="defaultValue", otherParam=None):
+    def __init__(self):
         """
         Called when initializing the classifier
         """
-        self.intValue = intValue
-        self.stringParam = stringParam
-
-        # THIS IS WRONG! Parameters should have same name as attributes
-        self.differentParam = otherParam
+        pass
 
     def fit(self, X, y=None):
         """
@@ -24,8 +20,9 @@ class DistToAverageClassifier(BaseEstimator, ClassifierMixin):
         Note: assert is not a good choice here and you should rather
         use try/except blog with exceptions. This is just for short syntax.
         """
-        assert (isinstance(X,pd.DataFrame)), "X should be a pandas dataframe" # quick and dirty try
-        self.mean_df = X.groupby(['label']).mean()
+        df = pd.DataFrame(X)
+        df['label'] = y
+        self.mean_df = df.groupby(['label']).mean()
         return self
 
     def _meaning(self, x):
