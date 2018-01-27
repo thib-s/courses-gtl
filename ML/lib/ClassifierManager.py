@@ -12,6 +12,8 @@ STORE_PATH = "trained_classifiers/ClassifierManagerDict"
 
 class ClassifierManager:
     """
+    This class acts as a DB for classifier. You can add a new classifier, and it will train it, test it,
+    and store the results on disk
 
     """
 
