@@ -66,8 +66,43 @@ class ClassifierManager:
         :return: the element added (no deep copy for performance purposes)
         """
         if self.dict.keys().__contains__(key_name) and (not self.train_override):
-            self.logger.info("already trained model, skipping model "+key_name)
+            self.logger.info("already trained model, skipping model " + key_name)
             return self.dict[key_name]
+        (
+            key_name,
+            classifer_instance,
+            fit_duration,
+            predict_duration,
+            predicted,
+            report
+        ) = ClassifierManager.train_classifier(
+            key_name,
+            classifer_instance,
+            train_df, test_df,
+            get_xy_function)
+        # now we have everything to add data to dict
+        result = self.add_trained_classifier(
+            key_name,
+            classifer_instance,
+            fit_duration,
+            predict_duration,
+            predicted,
+            report
+        )
+        self.do_backup()
+        return result
+
+    @staticmethod
+    def train_classifier(key_name, classifer_instance, train_df: pd.DataFrame, test_df: pd.DataFrame, get_xy_function):
+        """
+        train and evaluate the classifier and return the results
+        :param key_name: the key in the dict, also used for plotting
+        :param classifer_instance:
+        :param train_df: the pandas dataframe corresponding to the train dataset
+        :param test_df: the pandas dataframe corresponding to the test dataset
+        :param get_xy_function: the function used to extract the x and y vector from dataframes
+        :return: the element added (no deep copy for performance purposes)
+        """
         # get the vectors
         (X_test, y_test) = get_xy_function(test_df)
         (X_train, y_train) = get_xy_function(train_df)
@@ -81,8 +116,7 @@ class ClassifierManager:
         predict_duration = timeit.default_timer() - start_time
         # generate report
         report = classification_report(y_test, predicted)
-        # now we have everything to add data to dict
-        result =  self.add_trained_classifier(
+        return (
             key_name,
             classifer_instance,
             fit_duration,
@@ -90,8 +124,6 @@ class ClassifierManager:
             predicted,
             report
         )
-        self.do_backup()
-        return result
 
     def pretty_print(self, key_name):
         """
