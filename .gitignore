@@ -1,3 +1,5 @@
 ML/datasets/*
 **/.idea/*
 husky_slam/husky_bags/
+ML/trained_classifiers/*.pkl
+ML/trained_regressors/*.pkl
