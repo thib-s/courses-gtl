@@ -1,0 +1,3 @@
+[submodule "Outdoor-SLAM-GTL2018"]
+	path = Outdoor-SLAM-GTL2018
+	url = https://github.com/thib-s/Outdoor-SLAM-GTL2018
