@@ -7,7 +7,7 @@
 *.bck2
 *.ipynb_checkpoints*
 autonomous-robotics/homeworks/scenes/
-ML/datasets/
+ML/assignment1/datasets/
 *.idea*
 husky_slam/husky_bags/
 
