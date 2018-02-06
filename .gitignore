@@ -1,5 +1,13 @@
-ML/datasets/*
-**/.idea/*
+*.pyc
+*.zip
+*.tar
+*.tar.gz
+*.pkl
+*.bck
+*.bck2
+*.ipynb_checkpoints*
+autonomous-robotics/homeworks/scenes/
+ML/datasets/
+*.idea*
 husky_slam/husky_bags/
-ML/trained_classifiers/*.pkl
-ML/trained_regressors/*.pkl
+
