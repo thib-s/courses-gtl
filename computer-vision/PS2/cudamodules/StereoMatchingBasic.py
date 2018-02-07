@@ -32,15 +32,17 @@ def testCuda():
     print(a)
 
 
-def stereo_matching_basic(img1, img2):
+def stereo_matching_basic(img1, img2, ws):
+    (imx, imy) = img1.shape
+    assert (img2.shape == (imx, imy))
     # block x and block y => x and y position of the mask on image a
     # thread x => x position of the mask on image b
     mod = SourceModule("""
           __global__ void compute(int32_t *a, int32_t *b, int32_t *result)
           {
-            const int32_t ws = 9;
-            const int32_t imx = 128;
-            const int32_t imy = 128;
+            const int32_t ws = """+str(ws)+""";
+            const int32_t imx = """+str(imx)+""";
+            const int32_t imy = """+str(imy)+""";
             const int32_t wdiam = (ws-1)/2;
             int32_t ax = (blockIdx.x + wdiam);
             int32_t ay = (blockIdx.y + wdiam);
@@ -67,10 +69,6 @@ def stereo_matching_basic(img1, img2):
           }
           """)
     func = mod.get_function("compute")
-
-    ws = 9
-    (imx, imy) = img1.shape
-    assert (img2.shape == (imx, imy))
 
     img1 = img1.astype(numpy.int32)
     img2 = img2.astype(numpy.int32)
@@ -104,7 +102,7 @@ img2 = img2[:, :, 1]
 print(img2.shape)
 print(numpy.min(img2))
 print(numpy.max(img2))
-matches = stereo_matching_basic(img1, img2)
+matches = stereo_matching_basic(img1, img2, 9)
 pylab.imshow(matches, cmap=pylab.gray())
 pylab.show()
 print(matches.shape)
