@@ -3,10 +3,7 @@ import pycuda.autoinit
 from pycuda.compiler import SourceModule
 import cv2
 import numpy
-import pylab
 
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 def testCuda():
     a = numpy.random.randn(4, 4)
@@ -101,43 +98,3 @@ def stereo_matching_basic(img1, img2, ws):
          grid=(imx - ws + 1, imy - ws + 1))
     cuda.memcpy_dtoh(matches, matches_gpu)
     return matches
-
-
-# img1 = cv2.imread('Data/leftTest.png')
-img1 = cv2.imread('Data/proj2-pair1-L.png')
-# img1 = cv2.GaussianBlur( src=img1, ksize=(7,7), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_REFLECT)
-img1 = img1[:, :, 1]
-# img2 = cv2.imread('Data/rightTest.png')
-img2 = cv2.imread('Data/proj2-pair1-R.png')
-# img2 = cv2.GaussianBlur( src=img2, ksize=(7,7), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_REFLECT)
-img2 = img2[:, :, 1]
-# pylab.imshow(img1, cmap=pylab.gray())
-# pylab.show()
-# pylab.imshow(img2, cmap=pylab.gray())
-# pylab.show()
-
-print(img2.shape)
-print(numpy.min(img2))
-print(numpy.max(img2))
-ws = 9
-matches = stereo_matching_basic(img1, img2, ws)
-pylab.imshow(matches, cmap=pylab.gray())
-pylab.show()
-print(matches.shape)
-print(numpy.min(matches))
-print(numpy.max(matches))
-
-
-# Set up grid and test data
-(imy, imx) = matches.shape
-x = range(imx)
-y = range(imy)
-
-
-hf = plt.figure()
-ha = hf.add_subplot(111, projection='3d')
-
-X, Y = numpy.meshgrid(x, y)  # `plot_surface` expects `x` and `y` data to be 2D
-ha.plot_surface(X, Y, matches)
-
-plt.show()
