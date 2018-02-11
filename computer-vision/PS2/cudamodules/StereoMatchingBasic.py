@@ -4,6 +4,45 @@ from pycuda.compiler import SourceModule
 import cv2
 import numpy
 
+KERNEL_CSS = """
+int32_t best;
+
+__shared__ int32_t scores[resdx];
+__syncthreads();
+int32_t d = 0;
+int32_t tmp = 0;
+for( i=-wdiam; i<=wdiam; i++){
+    for( j=-wdiam; j<=wdiam; j++){
+        tmp = a[(ay+i)+((ax+j)*imy)] - b[(ay+i)+((bx+j)*imy)];
+        d = d + (tmp*tmp);
+    }
+}
+scores[tix] = d;
+"""
+
+KERNEL_CROSS_CORR = """
+float best;
+
+__shared__ float scores[resdx];
+__syncthreads();
+
+int32_t aij;
+int32_t bij;
+float sa = 0.0;
+float sb = 0.0;
+float d = 0.0;
+for( i=-wdiam; i<=wdiam; i++){
+    for( j=-wdiam; j<=wdiam; j++){
+        aij = a[(ay+i)+((ax+j)*imy)];
+        bij = b[(ay+i)+((bx+j)*imy)];
+        sa = sa + ((float)(aij*aij));
+        sb = sb + ((float)(bij*bij));
+        d = d + ((float)(aij * bij));
+    }
+}
+scores[tix] = d / sqrtf(sa*sb);
+"""
+
 
 def testCuda():
     a = numpy.random.randn(4, 4)
@@ -31,7 +70,7 @@ def testCuda():
     print(a)
 
 
-def stereo_matching_basic(img1, img2, ws):
+def stereo_matching_basic(img1, img2, ws, kernel=KERNEL_CSS):
     (imx, imy) = img1.shape
     assert (img2.shape == (imx, imy))
     # block x and block y => x and y position of the mask on image a
@@ -53,21 +92,9 @@ def stereo_matching_basic(img1, img2, ws):
             int32_t bx = threadIdx.x + wdiam;
             int32_t i;
             int32_t j;
-            int32_t d = 0;
-            int32_t tmp;
             int32_t k;
-            int32_t best;
             
-            __shared__ int32_t scores[resdx];
-            __syncthreads();
-            
-            for( i=-wdiam; i<=wdiam; i++){
-                for( j=-wdiam; j<=wdiam; j++){
-                    tmp = a[(ay+i)+((ax+j)*imy)] - b[(ay+i)+((bx+j)*imy)];
-                    d = d + (tmp*tmp);
-                }
-            }
-            scores[tix] = d;
+            """+kernel+"""
             
             __syncthreads();
             if (tix == 0){
