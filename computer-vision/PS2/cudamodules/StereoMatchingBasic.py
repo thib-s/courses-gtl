@@ -3,17 +3,18 @@ import pycuda.autoinit
 from pycuda.compiler import SourceModule
 import cv2
 import numpy
+import pylab
 
 KERNEL_CSS = """
-int32_t best;
+register int64_t best;
 
-__shared__ int32_t scores[resdx];
+__shared__ int64_t scores[resdy];
 __syncthreads();
-int32_t d = 0;
-int32_t tmp = 0;
+register int64_t d = 0;
+register int64_t tmp = 0;
 for( i=-wdiam; i<=wdiam; i++){
     for( j=-wdiam; j<=wdiam; j++){
-        tmp = a[(ay+i)+((ax+j)*imy)] - b[(ay+i)+((bx+j)*imy)];
+        tmp = a[(ay+i)+((ax+j)*imy)] - b[(bx+i)+((ax+j)*imy)];
         d = d + (tmp*tmp);
     }
 }
@@ -21,26 +22,26 @@ scores[tix] = d;
 """
 
 KERNEL_CROSS_CORR = """
-float best;
+register float best;
 
 __shared__ float scores[resdx];
 __syncthreads();
 
-int32_t aij;
-int32_t bij;
-float sa = 0.0;
-float sb = 0.0;
-float d = 0.0;
+int64_t aij;
+int64_t bij;
+int64_t sa = 0;
+int64_t sb = 0;
+int64_t d = 0;
 for( i=-wdiam; i<=wdiam; i++){
     for( j=-wdiam; j<=wdiam; j++){
         aij = a[(ay+i)+((ax+j)*imy)];
-        bij = b[(ay+i)+((bx+j)*imy)];
-        sa = sa + ((float)(aij*aij));
-        sb = sb + ((float)(bij*bij));
-        d = d + ((float)(aij * bij));
+        bij = b[(bx+i)+((ax+j)*imy)];
+        sa = sa + (aij*aij);
+        sb = sb + (bij*bij);
+        d  = d  + (aij*bij);
     }
 }
-scores[tix] = d / sqrtf(sa*sb);
+scores[tix] = ((float)d) / sqrtf((float)sa*sb);
 """
 
 
@@ -76,23 +77,23 @@ def stereo_matching_basic(img1, img2, ws, kernel=KERNEL_CSS):
     # block x and block y => x and y position of the mask on image a
     # thread x => x position of the mask on image b
     mod = SourceModule("""
-          __global__ void compute(int32_t *a, int32_t *b, int32_t *result)
+          __global__ void compute(int64_t *a, int64_t *b, int64_t *result)
           {
-            const int32_t bix = blockIdx.x;
-            const int32_t biy = blockIdx.y;
-            const int32_t tix = threadIdx.x;
-            const int32_t ws = """+str(ws)+""";
-            const int32_t imx = """+str(imx)+""";
-            const int32_t imy = """+str(imy)+""";
-            const int32_t wdiam = (ws-1)/2;
-            int32_t ax = (blockIdx.x + wdiam);
-            const int32_t resdx = imx-ws+1;
-            const int32_t resdy = imy-ws+1;
-            int32_t ay = (blockIdx.y + wdiam);
-            int32_t bx = threadIdx.x + wdiam;
-            int32_t i;
-            int32_t j;
-            int32_t k;
+            const int64_t bix = blockIdx.x;
+            const int64_t biy = blockIdx.y;
+            const int64_t tix = threadIdx.x;
+            const int64_t ws = """+str(ws)+""";
+            const int64_t imx = """+str(imx)+""";
+            const int64_t imy = """+str(imy)+""";
+            const int64_t wdiam = (ws-1)/2;
+            const int64_t resdx = imx-ws+1;
+            const int64_t resdy = imy-ws+1;
+            const int64_t ax = (bix + wdiam);
+            const int64_t ay = (biy + wdiam);
+            const int64_t bx = tix + wdiam;
+            register int64_t i;
+            register int64_t j;
+            register int64_t k;
             
             """+kernel+"""
             
@@ -100,9 +101,11 @@ def stereo_matching_basic(img1, img2, ws, kernel=KERNEL_CSS):
             if (tix == 0){
                 for (k=0; k<resdx; k++){
                     d = scores[k];
-                    if ((k==0)||(d < best)){
+                    if ((k==0)||(d <= best)){
                         best = d;
-                        result[biy + (bix*resdy)] = bix - k;
+                        if (((biy - k)>=0)&&((biy - k)<200)){ 
+                            result[biy + (bix*resdy)] = biy - k;
+                        }
                     }
                 }
             }
@@ -110,14 +113,14 @@ def stereo_matching_basic(img1, img2, ws, kernel=KERNEL_CSS):
           """)
     func = mod.get_function("compute")
 
-    img1 = img1.astype(numpy.int32)
-    img2 = img2.astype(numpy.int32)
+    img1 = img1.astype(numpy.int64)
+    img2 = img2.astype(numpy.int64)
     img1_gpu = cuda.mem_alloc(img1.nbytes)
     img2_gpu = cuda.mem_alloc(img2.nbytes)
     cuda.memcpy_htod(img1_gpu, img1)
     cuda.memcpy_htod(img2_gpu, img2)
 
-    matches = numpy.zeros((imx - ws+1, imy - ws+1), dtype=numpy.int32)
+    matches = numpy.zeros((imx - ws+1, imy - ws+1), dtype=numpy.int64)
     matches_gpu = cuda.mem_alloc(matches.nbytes)
     cuda.memcpy_htod(matches_gpu, matches)
 
@@ -125,3 +128,29 @@ def stereo_matching_basic(img1, img2, ws, kernel=KERNEL_CSS):
          grid=(imx - ws + 1, imy - ws + 1))
     cuda.memcpy_dtoh(matches, matches_gpu)
     return matches
+
+
+if __name__ == "__main__":
+    # pylab.imshow(stereo_matching_basic(
+    # cv2.cvtColor(cv2.imread('Data/leftTest.png'), cv2.COLOR_BGR2GRAY),
+    # cv2.cvtColor(cv2.imread('Data/rightTest.png'), cv2.COLOR_BGR2GRAY),
+    # 5), cmap=pylab.gray())
+    # pylab.show()
+
+    pylab.imshow(stereo_matching_basic(
+    cv2.cvtColor(cv2.imread('Data/leftTest.png'), cv2.COLOR_BGR2GRAY),
+    cv2.cvtColor(cv2.imread('Data/rightTest.png'), cv2.COLOR_BGR2GRAY),
+    5, kernel=KERNEL_CROSS_CORR), cmap=pylab.gray())
+    pylab.show()
+
+    # pylab.imshow(stereo_matching_basic(
+    # cv2.cvtColor(cv2.imread("Data/proj2-pair1-L.png"), cv2.COLOR_BGR2GRAY),
+    # cv2.cvtColor(cv2.imread("Data/proj2-pair1-R.png"), cv2.COLOR_BGR2GRAY),
+    # 5), cmap=pylab.gray())
+    # pylab.show()
+
+    pylab.imshow(stereo_matching_basic(
+    cv2.cvtColor(cv2.imread("Data/proj2-pair1-L.png"), cv2.COLOR_BGR2GRAY),
+    cv2.cvtColor(cv2.imread("Data/proj2-pair1-R.png"), cv2.COLOR_BGR2GRAY),
+    5, kernel=KERNEL_CROSS_CORR), cmap=pylab.gray())
+    pylab.show()
