@@ -28,4 +28,4 @@ def display_img(img):
 def display_and_save(img, name):
     pylab.imshow(img, cmap=pylab.gray())
     pylab.show()
-    cv2.imwrite("ps1-2-1.jpg", img)
+    cv2.imwrite(filename="img/"+name+".jpg", img=img)
