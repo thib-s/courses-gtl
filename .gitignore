@@ -5,9 +5,10 @@
 *.pkl
 *.bck
 *.bck2
+*.csv
 *.ipynb_checkpoints*
 autonomous-robotics/homeworks/scenes/
 ML/assignment1/datasets/
 *.idea*
 husky_slam/husky_bags/
-
+computer-vision/Computer_Vision/
