@@ -40,6 +40,10 @@ next meeting:
 02-12 meeting:
 ==============
 
+Work done: Visualization of the features as markers in rviz. Some glitch are still present but it may be fixed soon.
+Also we need to split the data flow to have both features messages and marker output.
+The first version of message definition are made, we still need to check for other eventual useful fields.
+
 initialisation:
 ---------------
 start with an empty map, and add feature in the map as you sees it
@@ -74,5 +78,6 @@ next tasks:
 - data association
 these three steps needs to be done together
 
-!
+___________________
+Remark:
 force numpy mat type in python
