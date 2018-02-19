@@ -1,0 +1,211 @@
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{titlesec} 
+\usepackage[top=2.5cm, bottom=2cm, left=3cm, right=3cm]{geometry}
+\usepackage{amsmath} %maths
+\usepackage{amsfonts} %maths
+\usepackage{fancyhdr} %footer
+\usepackage[scaled=0.95]{helvet}
+\usepackage{lmodern} %font
+\usepackage[font=sf,labelfont=sf]{caption} 
+\usepackage[titles]{tocloft} %toc
+\usepackage[hidelinks]{hyperref} %refs cliquables
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{xstring}
+\usepackage{appendix}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{\bl{\hrule}\vspace{1em}\Huge\textbf{Machine Learning - Problem set 1}\\[-0.7em]\bl{\hrule}}
+\author{\large\textsc{\bl{B}oissin} \bl{T}hibaut}
+\date{February 2018}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TOC
+	% Change of name
+	\addto\captionsfrench{
+	  \renewcommand{\contentsname}%
+	    {table of contents}%
+	}
+	
+	% Change of subsec font
+	\renewcommand{\cftsubsecfont}{\sffamily}
+	
+	% Change of subsec page numbers font
+	\renewcommand{\cftsubsecpagefont}{\sffamily}
+	
+	\renewcommand{\cftsubsubsecpagefont}{\sffamily}
+	
+	% In case of indent pbs, a \cftsetindents command exists
+	% To remove a page number, \cftpagenumbersoff (command)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Change of numerotation & indent
+\renewcommand{\thesection}{\Roman{section}}
+\renewcommand{\thesubsection}{\hspace*{0.4 cm}\arabic{subsection}}
+
+\titleformat{\section}[block]{\bfseries\Large}{\bl{\thesection.}}{.5em}{}[\vspace{-0.7em}\bl{\titlerule}]
+\titleformat{\subsection}[block]{\bfseries\large}{\thesubsection.}{10 pt}{}[\vspace{-0.7em}\hspace{0.6em}\bl{\titlerule}]
+\titleformat{\subsubsection}[block]{\bfseries\large}{\thesubsubsection.}{8 pt}{}
+\titleformat{\paragraph}[runin]{\bfseries}{\theparagraph.}{8 pt}{}
+\titlespacing{\subsection}{12 pt}{*4}{*3}
+\titlespacing{\subsubsection}{25 pt}{*3}{*1.5}
+
+\definecolor{myBlue}{RGB}{4,38,204}
+\newcommand{\bl}[1]{\textcolor{myBlue}{#1}}
+
+%\renewcommand{\section}[1]{\section{\bl{\StrChar{#1}{1}}\StrDel{\StrChar{#1}{1}}}}
+
+% Change of figure name
+\addto\captionsfrench{
+	\renewcommand{\figurename}{\sffamily \textsc{Figure}}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Change small caps font
+% phv for helvetica
+% sc for small caps
+\DeclareTextFontCommand{\textsc}{\fontfamily{phv}\fontshape{sc}\selectfont} 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\setlength{\parindent}{0pt}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
+% Page layouts
+\pagestyle{fancy}
+\lhead{\sffamily Thibaut Boissin}
+\chead{}
+\rhead{\sffamily \emph{Problem set 1}}
+\lfoot{}
+\cfoot{\sffamily\thepage}
+\rfoot{}
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amsthm}
+\newtheorem*{Rem}{Remarque}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% To wrap a figure :
+
+%	\begin{wrapfigure}[nb of rows]{r}{width}
+%		\centering
+%		\includegraphics[]{}
+%		\caption{}
+%		\label{}
+%	\end{wrapfigure}
+	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\section{Q1}
+ 
+SEE P168 of the book
+
+\subsection{1}
+For this question we need to reconsider the model to be probabilistic: instead of comparing to a dataset $\{ \( x_i, d_i\)\}$ we need to compare to a function modelling the probability to have one or the other classes. This function will be noted $f$ and as our algorithm gives deterministic results, we need to compare to a function that can be defined as:
+\[
+f\prime(x_i) = \frac{\mid \(x_i, 1\) \mid}{\mid \(x_i, d_i\) \mid}
+\]
+Which allow comparision.\\
+
+We need then to determine $P\(D \mid h)$ using it's definition first. Then we notice that we can use bayes rule as x is independent of h:
+\[
+P\(D \mid h)=\prod_{i}P\(x_i, d_i \mid h \) = \prod_{i} P\(d_i \mid h, x_i \)P\(x_i\)
+\]
+In the previous expression, we can note $P\(d_i \mid h, x_i\)$ follows a Bernouilli distribution with $p=h(x_i)$. We get then $P\(d_i \mid h, x_i\) = h(x_i)^{d_i}(1-h(x_i))^{1-d_i}$
+\\
+Now we have an expression of $P\(D \mid h\) we can define $h_{ML}$ with the argmax over h:
+\[
+P\(D\mid h\) = argmax_{h \in H} \prod_{i=1}^{m} h\(x_i\)^{d_i}\(1-h\(x_i\)\)^{1-d_i}P\(X_i\)
+\]
+As the last term of the product is independent of h we can drop it from the expression.
+\[
+P\(D\mid h\) = argmax_{h \in H} \prod_{i=1}^{m} h\(x_i\)^{d_i}\(1-h\(x_i\)\)^{1-d_i}
+\]
+Note: we can apply a log over his expression to simplify the search, as log is increasing and monotonic.
+
+\subsection{2}
+
+By considering the case of a deterministic function with a zero-mean gaussian noise, we're actually approaching 
+By looking at the way we constructed the error function we can notice that if the number of samples is great, the binomial law of the errors can be approached by a gaussian. This means that if m is very high, the results would be the same. But this needs to have more that 30 sample for each $X_i$. If we have exact probabilities, the results would also be the same.
+
+\section{Q2}
+
+    
+    The following figure (\ref{fig:linsep}) shows that the line that separate the points have the equation $ X_b = X_a -0.5$. By rearranging the equation we can choose $w_a = -1$, $w_b = 1$, and $\theta = -0.5$.\\
+
+    \begin{figure}[h]
+      \centering
+        \includegraphics[width=0.4\textwidth]{AandnotB.png}
+      \caption{linear separation of $A\wedge \neg B$}
+      \label{fig:linsep}
+    \end{figure}
+    
+    We can now infer build the table of Xor using $A$ and not $B$:
+    \begin{table}[h!]
+        \centering
+        \begin{tabular}{c|c|c|c}
+            A & B & $A\wedge \neg B$ & A xor B \\
+            \hline
+            F & F & F & F \\
+            F & T & F & T\\
+            T & F & T & T\\
+            T & T & F & F 
+        \end{tabular}
+        \caption{Caption}
+        \label{tab:my_label}
+    \end{table}
+    
+    For now we can apply the perceptron learning rule to get the weights, but we can also set these by hand. If you start with a perceptron doing the \emph{or} function and adjust the weights to correct the last result ( A = T and B = T). This can be done by decreasing the weight on A such as the $w_aA+w_bB<w_bB$ we then correct the result of the $3^rd$ row by putting a high weight on $A \wedge \neg B$.\\
+    The obtained set of weights is:
+    \begin{itemize}
+        \item $w_a = -0.5$
+        \item $w_b = 0.5$
+        \item $w_{a\&-b} = 1$
+        \item $\theta = 0.2$ anything between 0 and 0.5 would work
+\end{itemize}
+
+\section{Q4}
+
+The most common way to perform a regression task with a decision tree follow this process :
+\begin{enumerate}
+\item put the continuous feature into bins. Various strategies may be applied, for instance we can compute bins of similar cardinality over the training set (we hope this approaches real data distribution)
+\item train the trees using bins as label
+\item compute a function on each leaf that fits the training data for this leaf. For instance mean or meadian ca be used, but other types of function can be used (linear or quadratic regression for instance)
+\end{enumerate}
+
+\section{Q5}
+
+\section{Q6}
+
+If the data are linearly separable, the use of the KNN would be prefered. This is the case because the decision tree model have difficulties to mimic the behaviour of lines as conditions on the nodes are defined on one variable at a time. At the opposite, KNN, with a reasonably high value for K leads to a behaviour close to the SVM, which would fit nicely the data.
+
+\section{Q7} 
+
+\subsection{1}
+
+First we may ask "how many parameters do we need to define this object?". As we need only one parameter (the radius) We can then assume that it's VC dimension is 2 ( number of paramter + 1 ). This is coherent with the defintion: 
+
+
+\end{document}
