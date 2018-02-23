@@ -48,19 +48,23 @@ def find_center(M):
     m4 = np.mat(M[:, 3:4])
     return -np.linalg.inv(Q) * m4
 
+
 def compute_fundamental(uv, uv2):
     everybody = np.hstack((uv, uv2))
     M = np.ones((9))
     for (u, v, u2, v2) in everybody:
         M = np.vstack((
             M,
-            [u*u2, u2*v, u2, v2*u, v*v2, v2, u, v, 1]
+            [u * u2, u2 * v, u2, v2 * u, v * v2, v2, u, v, 1]
         ))
     M = M[1:, :]
     (u, s, vh) = np.linalg.svd(M)
-    F = np.reshape(vh[-1, :], (3, 3))
+    return np.reshape(vh[-1, :], (3, 3))
+
+
+def clean_fundamental(F):
     (u, d, vh) = np.linalg.svd(F)  # note : (np.mat(u)*np.mat(np.diag(d))*np.mat(vh) = F
-    return np.mat(u)*np.mat(np.diag([d[0], d[1], d[2]]))*np.mat(vh)
+    return np.mat(u) * np.mat(np.diag([d[0], d[1], d[2]])) * np.mat(vh)
 
 
 if __name__ == "__main__":
@@ -75,4 +79,6 @@ if __name__ == "__main__":
     print find_center(M)
     F = compute_fundamental(uv1, uv2)
     print F
+    F2 = clean_fundamental(F)
+    print F2
     print np.mat(np.hstack((uv2[0, :], 1))) * np.mat(F) * np.mat(np.hstack((uv1[0, :], 1))).T
