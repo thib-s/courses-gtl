@@ -24,21 +24,21 @@ def compute_residual(uv, xyz, M):
     xyz1 = np.hstack((xyz, np.ones((h_xyz, 1))))
     uvs = xyz1 * np.mat(M.T)
     uv_calc = uvs[:, :-1] / uvs[:, -1]
-    return np.sqrt(np.sum(np.square(uv_calc - uv))) / h_uv
+    return np.sum(np.square(uv_calc - uv))
 
 
 def k_fold(k, uv, xyz):
-    everybody = np.hstack((xyz, uv))
+    everybody = np.hstack((uv, xyz))
     lowest_res = np.inf
     res_sum = 0
-    for i in range(10):
+    for i in range(100):
         np.random.shuffle(everybody)
         M = compute_projection_matrix(everybody[0:k, 0:2], everybody[0:k, 2:5])
         res = compute_residual(everybody[k:k + 4, 0:2], everybody[k:k + 4, 2:5], M)
         res_sum += res
         if res < lowest_res:
             lowest_res = res
-    return lowest_res, res_sum / 10
+    return lowest_res, res_sum / 100
 
 
 def find_center(M):
