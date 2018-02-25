@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 
 def compute_projection_matrix(uv, xyz):
@@ -67,6 +68,22 @@ def clean_fundamental(F):
     return np.mat(u) * np.mat(np.diag([d[0], d[1], d[2]])) * np.mat(vh)
 
 
+def draw_epipolar_line(img, F, uv):
+    F = np.mat(F)
+    uv = np.mat(uv)
+    img = img.copy()
+    (h, w, d) = img.shape
+    # we cross finger that there is no division by 0!
+    lines = F * np.vstack((uv.T, np.mat(np.ones_like(uv[:, 0])).T))
+    # lines[0, :] = np.divide(lines[0, :], lines[2, :])
+    # lines[1, :] = np.divide(lines[1, :], lines[2, :])
+    for (a, b, c) in np.asarray(lines.T):
+        pt1 = (0, int(-c/b))
+        pt2 = (w, int(-(a/b)*w-(c/b)))
+        cv2.line(img, pt1, pt2, (0, 255, 0), thickness=1)
+    return img
+
+
 if __name__ == "__main__":
     uv = np.loadtxt("pts2d-norm-pic_a.txt")
     uv1 = np.loadtxt("pts2d-pic_a.txt")
@@ -81,4 +98,6 @@ if __name__ == "__main__":
     print F
     F2 = clean_fundamental(F)
     print F2
-    print np.mat(np.hstack((uv2[0, :], 1))) * np.mat(F) * np.mat(np.hstack((uv1[0, :], 1))).T
+    print np.mat(np.hstack((uv2[0, :], 1))) * np.mat(F2) * np.mat(np.hstack((uv1[0, :], 1))).T
+    print np.linalg.norm(F - F2, 'fro')
+    draw_epipolar_line(np.zeros((800, 800, 3)), F2, uv1)
