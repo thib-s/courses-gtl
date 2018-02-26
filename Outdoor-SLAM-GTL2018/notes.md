@@ -81,3 +81,28 @@ these three steps needs to be done together
 ___________________
 Remark:
 force numpy mat type in python
+
+02-19 meeting:
+==============
+
+Last week
+---------
+We successfully finished designing and implementing the feature extraction algorithm. One problem remaining, however, is that we are publishing visualization messages. We should instead publish features, and currently Thibaut is integrating his definition of the feature type into our project.
+
+This week
+---------
+We will attempt to gain a better understanding of the Kalman Filter and the EKF/SLAM algorithm. I (Kevin) will begin by implementing the Kalman Filter and will meet with Thibaut to get some help. We plan to meet together on Wednesday, and will work on this throughout the week.
+
+02-26 meeting:
+==============
+
+Last week
+---------
+
+We experimented Kalman filters by doing the autonomous robotic homework. It consist in performing SLAM, on a turtlebot using visual markers. (which avoid the data association problem)
+
+This week:
+----------
+
+We now need to transpose the work done on the turtlebot to the Husky, it implies, find the proper functions and compute the jacobians.
+We will also need to perform the data association, although it will probably be hard to implement it for the end of the week.
