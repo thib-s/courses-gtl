@@ -80,7 +80,23 @@ def draw_epipolar_line(img, F, uv):
     for (a, b, c) in np.asarray(lines.T):
         pt1 = (0, int(-c/b))
         pt2 = (w, int(-(a/b)*w-(c/b)))
-        cv2.line(img, pt1, pt2, (0, 255, 0), thickness=1)
+        cv2.line(img, pt1, pt2, (0, 255, 0), thickness=2)
+    return img
+
+
+def draw_epipolar_line_2(img, F, uv):
+    F = np.mat(F)
+    uv = np.mat(uv)
+    img = img.copy()
+    (h, w, d) = img.shape
+    # we cross finger that there is no division by 0!
+    lines = np.vstack((uv.T, np.mat(np.ones_like(uv[:, 0])).T)).T * F
+    # lines[0, :] = np.divide(lines[0, :], lines[2, :])
+    # lines[1, :] = np.divide(lines[1, :], lines[2, :])
+    for (a, b, c) in np.asarray(lines):
+        pt1 = (0, int(-c/b))
+        pt2 = (w, int(-(a/b)*w-(c/b)))
+        cv2.line(img, pt1, pt2, (0, 255, 0), thickness=2)
     return img
 
 
