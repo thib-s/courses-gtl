@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   sensor_msgs
+  geometry_msgs
   message_generation
 )
 
@@ -53,6 +54,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
    FILES
    feature.msg
+   featureArray.msg
    map.msg
 )
 
@@ -74,6 +76,7 @@ add_message_files(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  geometry_msgs
 )
 
 ################################################
@@ -202,4 +205,6 @@ include_directories(
 # catkin_add_nosetests(test)
 
 add_executable(extractor src/extractor.cpp)
+add_executable(FeatureVisualizer src/FeatureVisualizer.cpp)
 target_link_libraries(extractor ${catkin_LIBRARIES})
+target_link_libraries(FeatureVisualizer ${catkin_LIBRARIES})

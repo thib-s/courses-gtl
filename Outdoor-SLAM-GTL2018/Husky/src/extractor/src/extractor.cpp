@@ -3,6 +3,7 @@
 #include "std_msgs/Float32.h"
 #include "sensor_msgs/LaserScan.h"
 #include <visualization_msgs/Marker.h>
+#include "extractor/featureArray.h"
 #include "math.h"
 
 const float MAX_DIST = 40.0;
@@ -27,6 +28,7 @@ class Feature {
 		Feature(float, float, float, float);
 		float getFeatureX();
 		float getFeatureY();
+        float getDiameter();
 };
 
 Feature::Feature(float theta1, float range1, float theta2, float range2) : theta1(theta1), range1(range1), theta2(theta2), range2(range2) {
@@ -48,6 +50,10 @@ float Feature::getFeatureY() {
 	return featureY;
 }
 
+float Feature::getDiameter() {
+    return diameter;
+}
+
 class FeatureExtractor {
 	public:
 		FeatureExtractor();
@@ -61,7 +67,7 @@ class FeatureExtractor {
 
 FeatureExtractor::FeatureExtractor() {
 	sub = n.subscribe("/lidar/scan", 1000, &FeatureExtractor::extractCallback, this);
-	feature_pub = n.advertise<visualization_msgs::Marker>("/feature", 1000);
+	feature_pub = n.advertise<extractor::featureArray>("/feature", 1000);//n.advertise<visualization_msgs::Marker>("/feature", 1000);
 }
 
 
@@ -104,37 +110,23 @@ void FeatureExtractor::extractCallback(const sensor_msgs::LaserScan::ConstPtr& m
 		}
 		
 	}
-	//ROS_INFO("%lu markers to publish...", features_map.size());
-	for (int i = 0; i < features_map.size(); i++) {
-		visualization_msgs::Marker marker;
-		marker.header = msg->header;
-		//marker.header.frame_id = "base_link";
-    		//marker.header.stamp = ros::Time::now();
-		marker.ns = "feature";
-		marker.id = i;
-		marker.type = visualization_msgs::Marker::CYLINDER;
-		marker.action = visualization_msgs::Marker::ADD;
-		marker.pose.position.x = features_map[i].getFeatureX();
-		marker.pose.position.y = features_map[i].getFeatureY();
-		marker.pose.position.z = 0.0;
-		marker.pose.orientation.x = 0.0;
-    		marker.pose.orientation.y = 0.0;
-    		marker.pose.orientation.z = 0.0;
-    		marker.pose.orientation.w = 1.0;
-		marker.scale.x = 0.4;
-    		marker.scale.y = 0.4;
-    		marker.scale.z = 1.0;
-		marker.color.r = 0.0f;
-    		marker.color.g = 1.0f;
-    		marker.color.b = 0.0f;
-    		marker.color.a = 1.0;
-		marker.lifetime = ros::Duration(0.1);
-		feature_pub.publish(marker);
-		//ROS_INFO("I published a marker at (%f, %f)", features_map[i].getFeatureX(), features_map[i].getFeatureY());
-	}
 
-  	
-	
+	//ROS_INFO("%lu markers to publish...", features_map.size());
+    extractor::featureArray featureArray;
+    featureArray.header = msg->header;
+    for (int i = 0; i < features_map.size(); i++) {
+        extractor::feature feature;
+        feature.header = msg->header;
+        feature.position.x = features_map[i].getFeatureX();
+        feature.position.y = features_map[i].getFeatureY();
+        feature.position.z = 0.0;
+        feature.diameter = features_map[i].getDiameter();
+        featureArray.features.push_back(feature);
+	}
+    feature_pub.publish(featureArray);
+
+
+
 }
 
 int main(int argc, char **argv)
