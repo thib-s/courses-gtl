@@ -9,6 +9,7 @@
 *.ipynb_checkpoints*
 autonomous-robotics/homeworks/scenes/
 ML/assignment1/datasets/
+ML/assignment3/datasets/
 *.idea*
 husky_slam/husky_bags/
 computer-vision/Computer_Vision/
