@@ -55,7 +55,7 @@ def harris_cuda_caller(grad_x, grad_y, wd, alpha):
     return R
 
 
-def get_maximas(harris_img, ws):
+def get_maximas(harris_img, grad_x, grad_y, ws):
     harris_img = harris_img.copy()
     maxi = np.max(harris_img)
     current_max = maxi
@@ -64,15 +64,19 @@ def get_maximas(harris_img, ws):
         current_max = harris_img.max()
         (x, y) = np.argwhere(harris_img.max() == harris_img)[0]
         harris_img[x - ws:x + ws, y - ws:y + ws] = 0
-        poi.append((x, y))
+        kp = cv2.KeyPoint()
+        kp.pt = (y, x)
+        kp.octave = 0
+        kp.size = ws
+        kp.angle = 180*np.math.atan2(grad_y[x, y], grad_x[x, y]) / np.pi
+        poi.append(kp)
     return poi
 
 
-def print_maximas(src, poi):
-    img = src.copy()
-    for (x, y) in poi:
-        cv2.circle(img, (y, x), 5, (0, 0, 255), -1)
-    return img
+def draw_keypoints(src, poi):
+    src = src.copy()
+    src = cv2.drawKeypoints(src, poi, None, color=(255), flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    return src
 
 
 if __name__ == '__main__':
@@ -80,14 +84,15 @@ if __name__ == '__main__':
     import pylab
 
     img = cv2.imread('inputs/simA.jpg')[:, :, 2]
-    I_x, I_y = sobel.compute_gradients(img, blursize=1, kersize=5 )
+    I_x, I_y = sobel.compute_gradients(img, blursize=5, kersize=11)
     begin = time.time()
     harris_img = harris_cuda_caller(I_x, I_y, wd=10, alpha=0.05)
     harris_img = np.abs(harris_img)
     print("computation time: ", time.time() - begin)
     pylab.imshow(harris_img, cmap=pylab.gray())
     pylab.show()
-    poi = get_maximas(harris_img, 10)
+    poi = get_maximas(harris_img=harris_img, grad_x=I_x, grad_y=I_y, ws=10)
     print("number of points:", len(poi))
-    pylab.imshow(print_maximas(img, poi))
+    pylab.imshow(draw_keypoints(img, poi))
     pylab.show()
+
