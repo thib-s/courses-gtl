@@ -25,16 +25,33 @@ def vote(elem, u, v, eps=10):
 
 
 def ransac_trans(prepared_matches):
+    N = np.inf
+    sample_count = 0
+    e = 1.0
+    s = 1
+    p = 0.9
     best = 0
     best_param = None
-    for i in range(int(len(prepared_matches) / 2)):
+    number_of_point = len(prepared_matches)
+    while N > sample_count:
+        # choose sample and count inliers
+        # choose sample
         [(x1, y1), (x2, y2)] = random.choice(prepared_matches)
         u = x1 - x2
         v = y1 - y2
+        # count inlier
         score = sum(list(map(lambda elem: vote(elem, u, v), prepared_matches)))
+        # save best result
         if score > best:
             best = score
             best_param = (u, v)
+        #
+        e0 = 1 - (score / number_of_point)
+        # adapt number of sample
+        if e0 < e:
+            e = e0
+            N = np.log(1 - p) / np.log(1 - (1 - e) ** s)
+        sample_count = sample_count + 1
     return best, best_param
 
 
