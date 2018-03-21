@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def compute_gradients(img1, blursize=5, kersize=3):
+def compute_gradients(img1, blursize=1, kersize=3):
     # kernel_smooth = np.vectorize(lambda x: x * 0.1)(np.array(
     #     [
     #         [1, 2, 1],
@@ -12,7 +12,7 @@ def compute_gradients(img1, blursize=5, kersize=3):
     # )
     # )
     img1 = cv2.GaussianBlur(src=img1,
-                            ksize=(2*blursize+1, 2*blursize+1),
+                            ksize=(4*blursize+1, 4*blursize+1),
                             sigmaX=blursize, sigmaY=blursize,
                             borderType=cv2.BORDER_REFLECT)
     # img1 = cv2.filter2D(img1, -1, kernel_smooth, borderType=cv2.BORDER_CONSTANT)
