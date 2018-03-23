@@ -3,6 +3,7 @@ import pylab
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
+from tools import sobel
 
 
 def plot_3d_img(matches):
@@ -28,4 +29,4 @@ def display_img(img):
 def display_and_save(img, name):
     pylab.imshow(img, cmap=pylab.gray())
     pylab.show()
-    cv2.imwrite(filename="img/"+name+".jpg", img=img)
+    cv2.imwrite(filename="img/"+name+".jpg", img=sobel.normalize(img))

@@ -3,8 +3,9 @@ import pylab
 import tools.harris as harris
 
 
-def get_sift_features(src):
+def get_sift_features(src, poi=None):
     sift = cv2.xfeatures2d.SIFT_create()
+    # des = sift.compute(src, poi, None) # WHY THIS DON'T WANNA WORK ?????
     kp, des = sift.detectAndCompute(src, None)
     return kp, des
 
