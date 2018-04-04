@@ -80,26 +80,25 @@ def wrapper_compute_lk_cuda(grad_x, grad_y, grad_t, wd):
 
 def warp_img(img, U, V):
     (width, height) = U.shape
-    mapU = np.zeros((height, width), dtype=np.float32)
-    mapV = np.zeros((height, width), dtype=np.float32)
+    mapU = np.zeros((width, height), dtype=np.float32)
+    mapV = np.zeros((width, height), dtype=np.float32)
     for x in range(0, width):
         for y in range(0, height):
-            mapU[y, x] = U[x, y] + x
-            mapV[y, x] = V[x, y] + y
-    return cv2.remap(src=img, map1=mapU, map2=mapV, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+            mapU[x, y] = U[x, y] + y
+            mapV[x, y] = V[x, y] + x
+    return cv2.remap(src=np.transpose(img), map1=mapV, map2=mapU, interpolation=cv2.INTER_LINEAR,
+                     borderMode=cv2.BORDER_CONSTANT)
 
 
 if __name__ == '__main__':
     im0 = cv2.imread("images/TestSeq/Shift0.png")[:, :, 0]
     im1 = cv2.imread("images/TestSeq/ShiftR2.png")[:, :, 0]
-    im0 = cv2.GaussianBlur(src=im0, ksize=(19, 7), sigmaX=10, sigmaY=3, borderType=cv2.BORDER_REFLECT)
-    im1 = cv2.GaussianBlur(src=im1, ksize=(19, 7), sigmaX=10, sigmaY=3, borderType=cv2.BORDER_REFLECT)
+    im0 = cv2.GaussianBlur(src=im0, ksize=(19, 7), sigmaX=10, sigmaY=10, borderType=cv2.BORDER_REFLECT)
+    im1 = cv2.GaussianBlur(src=im1, ksize=(19, 7), sigmaX=10, sigmaY=10, borderType=cv2.BORDER_REFLECT)
     grad_t = im1 - im0
     grad_t = grad_t.astype(float)
     grad_x, grad_y = sobel.compute_gradients(im0)
     U, V = wrapper_compute_lk_cuda(grad_x, grad_y, grad_t, 5)
-    pylab.imshow(U, cmap=pylab.gray())
-    pylab.imshow(V, cmap=pylab.gray())
-    pylab.show()
-    cv2.imshow("warped image", warp_img(im0, U, V))
+    warped = warp_img(im0, U, V)
+    cv2.imshow("warped image", np.hstack((im0, warped, im1)))
     cv2.waitKey()
