@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import pylab
 from numba import jit, cuda
 from tools import sobel, laplacian_pyramid
 
@@ -59,13 +58,14 @@ def compute_lk_cuda(grad_x, grad_y, grad_t, U, V, wd):
     Iyy = 0.0
     Ixt = 0.0
     Iyt = 0.0
-    for x in range(-wd, +wd, 1):
-        for y in range(-wd, +wd, 1):
-            Ixt += grad_x[i + x, j] * grad_t[i + x, j + y]
-            Iyt += grad_y[i + x, j] * grad_t[i + x, j + y]
-            Ixx += grad_x[i + x, j + y] ** 2
-            Ixy += grad_x[i + x, j + y] * grad_y[i + x, j + y]
-            Iyy += grad_y[i + x, j + y] ** 2
+    (width, height) = grad_x.shape
+    for x in range(max(i-wd, 0), min(i+wd, width), 1):
+        for y in range(max(j-wd, 0), min(j+wd, height), 1):
+            Ixt += grad_x[x, j] * grad_t[x, y]
+            Iyt += grad_y[x, j] * grad_t[x, y]
+            Ixx += grad_x[x, y] ** 2
+            Ixy += grad_x[x, y] * grad_y[x, y]
+            Iyy += grad_y[x, y] ** 2
     norm = float(Ixx * Iyy) - float(Ixy ** 2)
     if Ixx == 0.0 and Ixy == 0.0 and Iyy == 0.0:
         U[i, j] = float(0.0)
@@ -146,8 +146,11 @@ def LK_pyramid(img: dict, level, wd):
     for key in img.keys():
         img_warped[key] = warp_img(img[key], u, v)
     # step 4 : current stage LK
-    (current_u, current_v) = wrapper_compute_lk_cuda(img_warped['grad_x'], img_warped['grad_y'], img_warped['grad_t'],
-                                                     int(wd))
+    (current_u, current_v) = wrapper_compute_lk_cuda(
+        img_warped['grad_x'],
+        img_warped['grad_y'],
+        img_warped['grad_t'],
+        int(wd))
     # step 5 : add current result to the accumulator and return it
     return current_u + u, current_v + v
 
@@ -174,17 +177,17 @@ def wrapper_LK_pyramid(img0, img1, depth, wd):
 
 if __name__ == '__main__':
     im0 = cv2.imread("images/TestSeq/Shift0.png")[:, :, 0]
-    im1 = cv2.imread("images/TestSeq/ShiftR2.png")[:, :, 0]
-    #im0 = cv2.GaussianBlur(src=im0, ksize=(19, 19), sigmaX=10, sigmaY=10, borderType=cv2.BORDER_REFLECT)
-    #im1 = cv2.GaussianBlur(src=im1, ksize=(19, 19), sigmaX=10, sigmaY=10, borderType=cv2.BORDER_REFLECT)
+    im1 = cv2.imread("images/TestSeq/ShiftR5U5.png")[:, :, 0]
+    im0 = cv2.GaussianBlur(src=im0, ksize=(7, 7), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_REFLECT)
+    im1 = cv2.GaussianBlur(src=im1, ksize=(7, 7), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_REFLECT)
     grad_t = im1 - im0
     grad_t = grad_t.astype(float)
     grad_x, grad_y = sobel.compute_gradients(im0)
-    U, V = wrapper_compute_lk_cuda(grad_x, grad_y, grad_t, 5)
+    U, V = wrapper_compute_lk_cuda(grad_x, grad_y, grad_t, 20)
     warped = warp_img(im0, U, V)
     cv2.imshow("warped image", np.hstack((im0, warped, im1)))
     cv2.waitKey()
-    U2, V2 = wrapper_LK_pyramid(im0, im1, 5, 20)
+    U2, V2 = wrapper_LK_pyramid(im0, im1, 2, 20)
     warped = warp_img(im0, U2, V2)
-    cv2.imshow("warped image", warped)
+    cv2.imshow("warped image pyramid", np.hstack((im0, warped, im1)))
     cv2.waitKey()
