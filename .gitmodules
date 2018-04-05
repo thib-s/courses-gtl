@@ -4,3 +4,6 @@
 [submodule "ML/assignment2/ML_homework_random"]
 	path = ML/assignment2/ML_homework_random
 	url = https://github.com/thib-s/ML_homework_random
+[submodule "autonomous-robotics/GTL_autonomiousRobotic"]
+	path = autonomous-robotics/GTL_autonomiousRobotic
+	url = https://github.com/anliec/GTL_autonomiousRobotic.git
