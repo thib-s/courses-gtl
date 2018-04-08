@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from matplotlib import pyplot as plt
 from numba import jit, cuda
 from tools import sobel, laplacian_pyramid
 
@@ -51,23 +52,23 @@ def compute_lk_cuda(grad_x, grad_y, grad_t, U, V, wd):
     :param grad_t: temporal gradient of image
     :param wd: the window size
     """
-    i = cuda.blockIdx.x + wd
-    j = cuda.blockIdx.y + wd
+    i = cuda.blockIdx.x
+    j = cuda.blockIdx.y
     Ixx = 0.0
     Ixy = 0.0
     Iyy = 0.0
     Ixt = 0.0
     Iyt = 0.0
     (width, height) = grad_x.shape
-    for x in range(max(i-wd, 0), min(i+wd, width), 1):
-        for y in range(max(j-wd, 0), min(j+wd, height), 1):
-            Ixt += grad_x[x, j] * grad_t[x, y]
-            Iyt += grad_y[x, j] * grad_t[x, y]
+    for x in range(max(i - wd, 0), min(i + wd, width), 1):
+        for y in range(max(j - wd, 0), min(j + wd, height), 1):
+            Ixt += grad_x[x, y] * grad_t[x, y]
+            Iyt += grad_y[x, y] * grad_t[x, y]
             Ixx += grad_x[x, y] ** 2
             Ixy += grad_x[x, y] * grad_y[x, y]
             Iyy += grad_y[x, y] ** 2
     norm = float(Ixx * Iyy) - float(Ixy ** 2)
-    if Ixx == 0.0 and Ixy == 0.0 and Iyy == 0.0:
+    if abs(norm) < 0.1:
         U[i, j] = float(0.0)
         V[i, j] = float(0.0)
     else:
@@ -87,8 +88,8 @@ def wrapper_compute_lk_cuda(grad_x, grad_y, grad_t, wd):
     """
     U = np.zeros(grad_x.shape, dtype=float)
     V = np.zeros(grad_x.shape, dtype=float)
-    blockspergrid_x = grad_x.shape[0] - 2 * wd
-    blockspergrid_y = grad_y.shape[1] - 2 * wd
+    blockspergrid_x = grad_x.shape[0]
+    blockspergrid_y = grad_y.shape[1]
     blockspergrid = (blockspergrid_x, blockspergrid_y)
     compute_lk_cuda[blockspergrid, 1](
         grad_x,
@@ -101,6 +102,7 @@ def wrapper_compute_lk_cuda(grad_x, grad_y, grad_t, wd):
     return U, V
 
 
+@jit
 def warp_img(img, U, V):
     """
     warp the image according to the U and V optical flow vectors
@@ -109,18 +111,18 @@ def warp_img(img, U, V):
     :param V:
     :return: the warped image
     """
-    (width, height) = U.shape
-    mapU = np.zeros((width, height), dtype=np.float32)
-    mapV = np.zeros((width, height), dtype=np.float32)
-    for x in range(0, width):
-        for y in range(0, height):
-            mapU[x, y] = U[x, y] + y
-            mapV[x, y] = V[x, y] + x
-    return cv2.remap(src=np.transpose(img), map1=mapV, map2=mapU, interpolation=cv2.INTER_LINEAR,
-                     borderMode=cv2.BORDER_CONSTANT)
+    (width, height) = img.shape
+    mapX = np.zeros((height, width), dtype=np.float32)
+    mapY = np.zeros((height, width), dtype=np.float32)
+    for x in range(0, width, 1):
+        for y in range(0, height, 1):
+            mapX[y, x] = U[x, y] + x
+            mapY[y, x] = V[x, y] + y
+    return cv2.remap(src=img.transpose(), map1=mapX, map2=mapY, interpolation=cv2.INTER_LINEAR,
+                     borderMode=cv2.BORDER_CONSTANT).transpose()
 
 
-def LK_pyramid(img: dict, level, wd):
+def LK_pyramid(img: dict, level: int, wd: int):
     """
     compute the hierachical LK optical flow, this function must be called trough wrapper_LK_pyramid
     :param img: dictionnary containing various gradient used
@@ -129,7 +131,7 @@ def LK_pyramid(img: dict, level, wd):
     :return: the U and V vector corresponding to the optical flow
     """
     # if we are on a leaf node
-    if level == 0:
+    if level <= 0:
         # LK computation
         return wrapper_compute_lk_cuda(img['grad_x'], img['grad_y'], img['grad_t'], int(wd))
     # if we are not on a leaf node
@@ -137,14 +139,18 @@ def LK_pyramid(img: dict, level, wd):
     # step 1: reduce all gradients images
     for key in img.keys():
         img_red[key] = laplacian_pyramid.reduce(img[key])
+        # cv2.imshow("red_"+key, sobel.normalize(img_red[key]))
+        # cv2.waitKey()
     # step 2: recursive call, get the result from the previous stages and expand it
-    (u, v) = LK_pyramid(img_red, level - 1, wd / 2)
-    u = laplacian_pyramid.expand(u)
-    v = laplacian_pyramid.expand(v)
+    (u, v) = LK_pyramid(img_red, level - 1, wd)
+    u = laplacian_pyramid.expand(np.vectorize(lambda x: 2 * x)(u), img['grad_x'].shape)
+    v = laplacian_pyramid.expand(np.vectorize(lambda x: 2 * x)(v), img['grad_x'].shape)
     # step 3 : warping
     img_warped = {}
     for key in img.keys():
         img_warped[key] = warp_img(img[key], u, v)
+        # cv2.imshow("war_"+key, sobel.normalize(img_warped[key]))
+        # cv2.waitKey()
     # step 4 : current stage LK
     (current_u, current_v) = wrapper_compute_lk_cuda(
         img_warped['grad_x'],
@@ -175,19 +181,33 @@ def wrapper_LK_pyramid(img0, img1, depth, wd):
     return LK_pyramid(img, depth, wd)
 
 
+def draw_field(img, U, V, stride, scale=1, autoprint=True):
+    x, y = np.meshgrid(np.arange(0, img.shape[1], stride),
+                       np.arange(0, img.shape[0], stride))
+    fig, ax = plt.subplots()
+    ax.imshow(img, cmap=plt.gray())
+    ax.quiver(x, y, U[::stride, ::stride], V[::stride, ::stride], angles='xy', units='xy', scale=scale, color='red')
+    if autoprint:
+        plt.show()
+    else:
+        return fig, ax
+
+
 if __name__ == '__main__':
-    im0 = cv2.imread("images/TestSeq/Shift0.png")[:, :, 0]
-    im1 = cv2.imread("images/TestSeq/ShiftR5U5.png")[:, :, 0]
-    im0 = cv2.GaussianBlur(src=im0, ksize=(7, 7), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_REFLECT)
-    im1 = cv2.GaussianBlur(src=im1, ksize=(7, 7), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_REFLECT)
-    grad_t = im1 - im0
+    im0 = cv2.imread("images/Taxis/taxi-00.jpg")[::1, ::1, 0]
+    im1 = cv2.imread("images/Taxis/taxi-01.jpg")[::1, ::1, 0]
+    # im0 = cv2.GaussianBlur(src=im0, ksize=(19, 19), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_REFLECT)
+    # im1 = cv2.GaussianBlur(src=im1, ksize=(19, 19), sigmaX=2, sigmaY=2, borderType=cv2.BORDER_REFLECT)
+    grad_t = im0 - im1
     grad_t = grad_t.astype(float)
     grad_x, grad_y = sobel.compute_gradients(im0)
-    U, V = wrapper_compute_lk_cuda(grad_x, grad_y, grad_t, 20)
-    warped = warp_img(im0, U, V)
-    cv2.imshow("warped image", np.hstack((im0, warped, im1)))
-    cv2.waitKey()
-    U2, V2 = wrapper_LK_pyramid(im0, im1, 2, 20)
+    # U, V = wrapper_compute_lk_cuda(grad_x, grad_y, grad_t, 40)
+    # warped = warp_img(im0, U, V)
+    # cv2.imshow("warped image", np.hstack((im0, warped, im1)))
+    # cv2.waitKey()
+    # draw_field(img=im0, U=U, V=V, stride=10)
+    U2, V2 = wrapper_LK_pyramid(im0, im1, 3, 40)
     warped = warp_img(im0, U2, V2)
     cv2.imshow("warped image pyramid", np.hstack((im0, warped, im1)))
     cv2.waitKey()
+    draw_field(img=im0, U=U2, V=V2, stride=10)

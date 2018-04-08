@@ -1,3 +1,5 @@
+from math import ceil
+
 import cv2
 
 
@@ -11,13 +13,15 @@ def reduce(img):
     return cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
 
 
-def expand(img):
+def expand(img, shape=None):
     """
     expand stage of the pyramid
     :param img: the image to expand
     :return: the expanded image
     """
-    img = cv2.resize(img, (0, 0), fx=2, fy=2)
+    if shape is None:
+        shape = (img.shape[0]*2, img.shape[1]*2)
+    img = cv2.resize(img, (shape[1], shape[0]))
     return cv2.GaussianBlur(src=img, ksize=(3, 3), sigmaX=1, sigmaY=1, borderType=cv2.BORDER_REFLECT)
 
 
@@ -32,7 +36,7 @@ def compute_pyramid(img, depth):
     L_i = []
     for i in range(depth):
         G_i.append(reduce(G_i[-1]))
-        L_i.append(expand(G_i[-1]) - G_i[-2])
+        L_i.append(expand(G_i[-1], G_i[-2].shape) - G_i[-2])
     return L_i, G_i
 
 
@@ -42,5 +46,5 @@ if __name__ == '__main__':
     cv2.waitKey()
     cv2.imshow("expand", expand(img))
     cv2.waitKey()
-    cv2.imshow("laplacian", img - expand(reduce(img)))
+    cv2.imshow("laplacian", img[0:64, 0:80] - expand(reduce(img)))
     cv2.waitKey()
