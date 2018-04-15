@@ -9,15 +9,17 @@ out = cv2.VideoWriter('output.avi', fourcc, 20.0, (1280, 720))
 if cap.isOpened():
     ret, frame = cap.read()
     gr = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    pf = ParticleFilter(np.mat([[371], [243]]), gr[150:300, 225:325], 500, 10)
-    # pf = ParticleFilter(np.mat([[371], [243]]), gr[349:407, 235:287], 200, 10)
+    # pf = ParticleFilter(243, 371, gr[150:300, 325:425], 1000, 10)
+    # pf = ParticleFilter(243, 371, gr[235:287, 349:407], 1000, 10)
+    # pf = ParticleFilter(450, 575, gr[380:498, 529:609], 10000, 10, 0.999)
+    pf = ParticleFilter(490, 375, gr[350:540, 280:400], 1000, 10, 0.89)
     while cap.isOpened():
         ret, frame = cap.read()
         pf.update(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
         frame = pf.draw_tracking_window(pf.draw_particles(frame))
         cv2.imshow('frame', frame)
         out.write(frame)
-        if cv2.waitKey(1000) & 0xFF == ord('q'):
+        if cv2.waitKey() & 0xFF == ord('q'):
             break
 
 cap.release()
