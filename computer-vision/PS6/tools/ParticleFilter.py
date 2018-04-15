@@ -74,8 +74,8 @@ class ParticleFilter:
             weighted_v_sum += self.scores[i] * self.particles[i].state[1]
         weighted_v_sum = int(weighted_v_sum)
         weighted_u_sum = int(weighted_u_sum)
-        w_u = int(self.window.shape[0]/2)
-        w_v = int(self.window.shape[1]/2)
+        w_u = int(self.window.shape[1]/2)
+        w_v = int(self.window.shape[0]/2)
         pt1 = (weighted_u_sum - w_u, weighted_v_sum - w_v)
         pt2 = (weighted_u_sum + w_u, weighted_v_sum + w_v)
         cv2.rectangle(img, pt1, pt2, (0, 255, 0))

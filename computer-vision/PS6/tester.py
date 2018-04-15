@@ -9,8 +9,8 @@ out = cv2.VideoWriter('output.avi', fourcc, 20.0, (1280, 720))
 if cap.isOpened():
     ret, frame = cap.read()
     gr = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # pf = ParticleFilter(np.mat([[371], [243]]), gr[150:300, 225:325], 500, 20)
-    pf = ParticleFilter(np.mat([[371], [243]]), gr[349:407, 235:287], 200, 10)
+    pf = ParticleFilter(np.mat([[371], [243]]), gr[150:300, 225:325], 500, 10)
+    # pf = ParticleFilter(np.mat([[371], [243]]), gr[349:407, 235:287], 200, 10)
     while cap.isOpened():
         ret, frame = cap.read()
         pf.update(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
