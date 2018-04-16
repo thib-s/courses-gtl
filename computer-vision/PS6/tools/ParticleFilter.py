@@ -3,7 +3,7 @@ import numpy as np
 import time
 from numba import jit
 
-DEBUG = True
+DEBUG = False
 
 def score(row, convolved_img, window) -> int:
     (w_v, w_u) = window.shape
@@ -12,10 +12,10 @@ def score(row, convolved_img, window) -> int:
     w_v *= 0.5
     w_u *= 0.5
     # if the particle goes out the boundaries, kill it by assinging high MSE
-    if (u < w_u) or (u > convolved_img.shape[0]) or (v < w_v) or (v > convolved_img.shape[1]):
+    if (u < w_u) or (u - w_u > convolved_img.shape[0]) or (v < w_v) or (v - w_v > convolved_img.shape[1]):
         return np.max(convolved_img)
     else:
-            return convolved_img[int(u - w_u), int(v - w_v)]
+        return convolved_img[int(u - w_u), int(v - w_v)]
 
 def get_point(row):
     return int(row[0, 1]), int(row[0, 0])
@@ -24,6 +24,15 @@ def get_point(row):
 class ParticleFilter:
 
     def __init__(self, u, v, window, N=200, sigma=10, IIR_alpha=None):
+        """
+        create a particle filter
+        :param u: x location of the initial window
+        :param v: y location of the initial window
+        :param window: the template to match
+        :param N: amount of particles
+        :param sigma: smoothness coefficient on the results
+        :param IIR_alpha: the alpha parameter use for appearance model update
+        """
         self.N = N
         self.particles = np.mat(np.hstack((np.mat([u]*N).T, np.mat([v]*N).T)))
         self.window = window
@@ -32,22 +41,22 @@ class ParticleFilter:
         self.IIR_alpha = IIR_alpha
 
     def predict(self):
-        self.particles = np.mat(np.random.normal(self.particles, 25))
+        self.particles = np.mat(np.random.normal(self.particles, 8))
 
     def update(self, img):
         self.predict()
         # compute MSE of each particle
         start_time = time.time()
         convolve_img = cv2.matchTemplate(img.copy(), self.window.astype(np.uint8), method=cv2.TM_SQDIFF)
-        print("--- %s seconds ---" % (time.time() - start_time))
         # debug = np.mat(np.exp(-1. * np.mat(normalize(convolve_img)))) - np.mat(np.exp(2. * (self.sigma ** 2)))
         if DEBUG:
+            print("--- %s seconds ---" % (time.time() - start_time))
             cv2.imshow("convolve", normalize(convolve_img))
         scores = np.array(list(map(lambda row: score(row, convolve_img, self.window), self.particles)))
         # convert the results into measurment
-        # scores = np.exp(-scores) - np.exp(2. * (self.sigma ** 2))
-        # normalize the results
         scores = np.array([max(scores)]*len(scores)) - scores
+        # scores = np.exp(-scores / (2. * (self.sigma ** 2)))
+        # normalize the results
         scores /= np.sum(scores)
         self.scores = scores
         # pick element to survive
@@ -69,7 +78,7 @@ class ParticleFilter:
         self.window = (1. - self.IIR_alpha) * np.mat(img[u - w_u:u + w_u, v - w_v:v + w_v]) \
                       +     self.IIR_alpha  * np.mat(self.window)
         cv2.imshow("window_updated", self.window.astype(np.uint8))
-        cv2.waitKey()
+        # cv2.waitKey()
         if DEBUG:
             pass
 
