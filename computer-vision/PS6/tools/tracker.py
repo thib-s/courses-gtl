@@ -3,7 +3,7 @@ import numpy as np
 from tools.ParticleFilter import ParticleFilter
 
 
-def track(input, w_cx, w_cy, w_w, w_h, sigma, alpha=None, output=None, display=True, frames_to_save=None):
+def track(input, w_cx, w_cy, w_w, w_h, N, sigma, alpha=None, output=None, display=True, frames_to_save=None):
     """
     apply particle filter to track something in a video
     :param input: the path string of the input video
@@ -11,6 +11,7 @@ def track(input, w_cx, w_cy, w_w, w_h, sigma, alpha=None, output=None, display=T
     :param w_cy: position of the window center (y)
     :param w_w: window width
     :param w_h: window height
+    :param N: the amount of particles
     :param sigma: the smoothing factor
     :param alpha: the alpha factor used in appearance model update
     :param output: the basename of the output video, it will be extended with params values
@@ -31,11 +32,11 @@ def track(input, w_cx, w_cy, w_w, w_h, sigma, alpha=None, output=None, display=T
         if output is not None:
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
             out = cv2.VideoWriter('output/' + output +
-                                  '_w-' + str(w_w) + '_h-' + str(w_h) +
+                                  '_w-' + str(w_w) + '_h-' + str(w_h) + 'N_' + str(N) +
                                   '_sigma-' + str(sigma) + '_alpha-' + str(alpha) +
                                   '.avi',
                                   fourcc, 20.0, (gr.shape[1], gr.shape[0]))
-        pf = ParticleFilter(w_cx, w_cy, gr[w_cx - w_w:w_cx + w_w, w_cy - w_h:w_cy + w_h], 5000, sigma, alpha)
+        pf = ParticleFilter(w_cx, w_cy, gr[w_cx - w_w:w_cx + w_w, w_cy - w_h:w_cy + w_h], N, sigma, alpha)
         while cap.isOpened():
             ret, frame = cap.read()
             if frame is None:
@@ -46,15 +47,16 @@ def track(input, w_cx, w_cy, w_w, w_h, sigma, alpha=None, output=None, display=T
                 cv2.imshow('frame', frame)
             if frames_to_save.__contains__(i):
                 cv2.imwrite('output/' + output +
-                            '_w-' + str(w_w) + '_h-' + str(w_h) +
+                            '_w-' + str(w_w) + '_h-' + str(w_h) + 'N_' + str(N) +
                             '_sigma-' + str(sigma) + '_alpha-' + str(alpha) +
                             '_frame-' + str(i) +
                             '.jpg',
                             frame)
                 output_frames[i] = frame
+                output_frames[10000+i] = pf.window
             if out is not None:
                 out.write(frame)
-            if cv2.waitKey(10) & 0xFF == ord('q'):
+            if cv2.waitKey(1000000) & 0xFF == ord('q'):
                 break
             i += 1
     cap.release()
@@ -65,4 +67,6 @@ def track(input, w_cx, w_cy, w_w, w_h, sigma, alpha=None, output=None, display=T
 
 
 if __name__ == '__main__':
-    track('inputs/pres_debate.avi', 239, 371, 64, 51, sigma=10, alpha=None, display=True, output='Q1', frames_to_save=[28, 84, 144])
+    # track('inputs/pres_debate.avi', 239, 371, 64, 51, N=5000, sigma=10, alpha=None, display=True, output='Q1', frames_to_save=[28, 84, 144])
+    track('inputs/pres_debate.avi', 433, 570, 60, 30, N=5000, sigma=10, alpha=0.5, display=True, output='Q2',
+          frames_to_save=[15, 50, 140])
