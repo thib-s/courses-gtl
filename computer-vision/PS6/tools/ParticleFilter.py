@@ -41,7 +41,7 @@ class ParticleFilter:
         self.IIR_alpha = IIR_alpha
 
     def predict(self):
-        self.particles = np.mat(np.random.normal(self.particles, 8))
+        self.particles = np.mat(np.random.normal(self.particles, 20))
 
     def update(self, img):
         self.predict()
@@ -54,8 +54,8 @@ class ParticleFilter:
             cv2.imshow("convolve", normalize(convolve_img))
         scores = np.array(list(map(lambda row: score(row, convolve_img, self.window), self.particles)))
         # convert the results into measurment
-        scores = np.array([max(scores)]*len(scores)) - scores
-        # scores = np.exp(-scores / (2. * (self.sigma ** 2)))
+        # scores = np.array([max(scores)]*len(scores)) - scores
+        scores = np.exp(-scores.astype(float) / (2. * (self.sigma ** 2)))
         # normalize the results
         scores /= np.sum(scores)
         self.scores = scores
@@ -70,7 +70,7 @@ class ParticleFilter:
     def update_window(self, img):
         best_index = np.argmax(self.scores)
         row = self.particles[best_index]
-        (v, u) = get_point(row) #(int(np.mean(self.particles[:, 1])), int(np.mean(self.particles[:, 0])))
+        (v, u) = get_point(row) # (int(np.asscalar(np.mat(self.scores) * self.particles[:, 1])), int(np.asscalar(np.mat(self.scores) * self.particles[:, 0])))
         w_u = int(self.window.shape[0] / 2)
         w_v = int(self.window.shape[1] / 2)
         cv2.imshow("window", img[u - w_u:u + w_u, v - w_v:v + w_v])

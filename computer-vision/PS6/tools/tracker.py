@@ -56,7 +56,7 @@ def track(input, w_cx, w_cy, w_w, w_h, N, sigma, alpha=None, output=None, displa
                 output_frames[10000+i] = pf.window
             if out is not None:
                 out.write(frame)
-            if cv2.waitKey(1000000) & 0xFF == ord('q'):
+            if cv2.waitKey(10) & 0xFF == ord('q'):
                 break
             i += 1
     cap.release()
@@ -68,5 +68,7 @@ def track(input, w_cx, w_cy, w_w, w_h, N, sigma, alpha=None, output=None, displa
 
 if __name__ == '__main__':
     # track('inputs/pres_debate.avi', 239, 371, 64, 51, N=5000, sigma=10, alpha=None, display=True, output='Q1', frames_to_save=[28, 84, 144])
-    track('inputs/pres_debate.avi', 433, 570, 60, 30, N=5000, sigma=10, alpha=0.5, display=True, output='Q2',
+    # track('inputs/pres_debate.avi', 433, 570, 60, 60, N=5000, sigma=2000, alpha=0.5, display=True, output='Q2',
+    #       frames_to_save=[15, 50, 140])
+    track('inputs/noisy_debate.avi', 433, 570, 60, 60, N=5000, sigma=1000, alpha=0.5, display=True, output='Q22',
           frames_to_save=[15, 50, 140])
