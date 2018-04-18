@@ -7,3 +7,6 @@
 [submodule "autonomous-robotics/GTL_autonomiousRobotic"]
 	path = autonomous-robotics/GTL_autonomiousRobotic
 	url = https://github.com/anliec/GTL_autonomiousRobotic.git
+[submodule "ML/assignment4/gym-2048"]
+	path = ML/assignment4/gym-2048
+	url = https://github.com/thib-s/gym-2048.git
