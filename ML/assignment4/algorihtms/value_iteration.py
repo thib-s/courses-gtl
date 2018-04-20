@@ -41,7 +41,7 @@ def evaluate_policy(env, policy, gamma=1.0, n=100):
     scores = [
         run_episode(env, policy, gamma=gamma, render=False)
         for _ in range(n)]
-    return np.min(scores), np.median(scores), np.max(scores)
+    return scores
 
 
 def extract_policy(v, env, gamma=1.0):
@@ -58,14 +58,12 @@ def extract_policy(v, env, gamma=1.0):
     return policy
 
 
-def value_iteration(env, gamma=1.0, step=None):
+def value_iteration(env, gamma=1.0, step=None, max_iterations=100000, eps=1e-20):
     """ Value-iteration algorithm """
     v = np.zeros(env.nS)  # initialize value-function
     all_v = []
     all_t = []
     all_eps = []
-    max_iterations = 100000
-    eps = 1e-20
     for i in range(max_iterations):
         prev_v = np.copy(v)
         for s in range(env.nS):
@@ -77,14 +75,17 @@ def value_iteration(env, gamma=1.0, step=None):
             break
         if step is not None:
             if divmod(i, step)[1] == 0:
-                print("step:"+str(i)+", increment:"+str(increment))
+                # print("step:"+str(i)+", increment:"+str(increment))
                 all_v.append(v)
                 all_t.append(time.time())
                 all_eps.append(increment)
     if step is not None:
-        return all_v, all_t, all_eps
+        return {
+            "values": all_v,
+            "computation_time": all_t,
+            "increment": all_eps
+        }
     return v
-
 
 if __name__ == '__main__':
     env_name = 'Taxi-v2'
