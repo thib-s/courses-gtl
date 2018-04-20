@@ -76,7 +76,7 @@ def value_iteration(env, gamma=1.0, step=None, max_iterations=100000, eps=1e-20)
         if step is not None:
             if divmod(i, step)[1] == 0:
                 # print("step:"+str(i)+", increment:"+str(increment))
-                all_v.append(v)
+                all_v.append(np.copy(v))
                 all_t.append(time.time())
                 all_eps.append(increment)
     if step is not None:
