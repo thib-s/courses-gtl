@@ -4,6 +4,7 @@ Author : Moustafa Alzantot (malzantot@ucla.edu)
 """
 import numpy as np
 import gym
+import time
 from gym import wrappers
 
 
@@ -40,7 +41,7 @@ def evaluate_policy(env, policy, gamma=1.0, n=100):
     scores = [
         run_episode(env, policy, gamma=gamma, render=False)
         for _ in range(n)]
-    return np.mean(scores)
+    return np.min(scores), np.median(scores), np.max(scores)
 
 
 def extract_policy(v, env, gamma=1.0):
@@ -57,19 +58,31 @@ def extract_policy(v, env, gamma=1.0):
     return policy
 
 
-def value_iteration(env, gamma=1.0):
+def value_iteration(env, gamma=1.0, step=None):
     """ Value-iteration algorithm """
     v = np.zeros(env.nS)  # initialize value-function
+    all_v = []
+    all_t = []
+    all_eps = []
     max_iterations = 100000
     eps = 1e-20
     for i in range(max_iterations):
         prev_v = np.copy(v)
         for s in range(env.nS):
-            q_sa = [sum([p * (r + prev_v[s_]) for p, s_, r, _ in env.P[s][a]]) for a in range(env.nA)]
+            q_sa = [sum([p * (r + gamma * prev_v[s_]) for p, s_, r, _ in env.P[s][a]]) for a in range(env.nA)]
             v[s] = max(q_sa)
-        if (np.sum(np.fabs(prev_v - v)) <= eps):
+        increment = np.sum(np.fabs(prev_v - v))
+        if increment <= eps:
             print('Value-iteration converged at iteration# %d.' % (i + 1))
             break
+        if step is not None:
+            if divmod(i, step)[1] == 0:
+                print("step:"+str(i)+", increment:"+str(increment))
+                all_v.append(v)
+                all_t.append(time.time())
+                all_eps.append(increment)
+    if step is not None:
+        return all_v, all_t, all_eps
     return v
 
 
