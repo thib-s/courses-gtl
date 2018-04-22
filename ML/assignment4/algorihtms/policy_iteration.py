@@ -55,7 +55,7 @@ def compute_policy_v(env, policy, gamma=1.0):
     while True:
         prev_v = np.copy(v)
         for s in range(env.nS):
-            policy_a = policy[s]
+            policy_a = int(policy[s])
             v[s] = sum([p * (r + gamma * prev_v[s_]) for p, s_, r, _ in env.P[s][policy_a]])
         if (np.sum((np.fabs(prev_v - v))) <= eps):
             # value converged
