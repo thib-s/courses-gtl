@@ -4,6 +4,7 @@ Author : Moustafa Alzantot (malzantot@ucla.edu)
 """
 import numpy as np
 import gym
+import time
 from gym import wrappers
 
 
@@ -12,7 +13,8 @@ def run_episode(env, policy, gamma=1.0, render=False):
     obs = env.reset()
     total_reward = 0
     step_idx = 0
-    while True:
+    max_idx = 1000
+    while step_idx < max_idx:
         if render:
             env.render()
         obs, reward, done, _ = env.step(int(policy[obs]))
@@ -46,6 +48,10 @@ def compute_policy_v(env, policy, gamma=1.0):
     """
     v = np.zeros(env.nS)
     eps = 1e-10
+    all_v = []
+    all_t = []
+    all_eps = []
+    i = 0
     while True:
         prev_v = np.copy(v)
         for s in range(env.nS):
@@ -54,27 +60,41 @@ def compute_policy_v(env, policy, gamma=1.0):
         if (np.sum((np.fabs(prev_v - v))) <= eps):
             # value converged
             break
+        i += 1
     return v
 
 
-def policy_iteration(env, gamma=1.0):
+def policy_iteration(env, gamma=1.0, step=None, max_iterations=100000, eps=1e-20):
     """ Policy-Iteration algorithm """
+    all_policies = []
+    all_t = []
+    all_eps = []
     policy = np.random.choice(env.nA, size=(env.nS))  # initialize a random policy
-    max_iterations = 200000
-    gamma = 1.0
     for i in range(max_iterations):
         old_policy_v = compute_policy_v(env, policy, gamma)
-        new_policy = extract_policy(old_policy_v, gamma)
+        new_policy = extract_policy(old_policy_v, env, gamma)
         if (np.all(policy == new_policy)):
             print('Policy-Iteration converged at step %d.' % (i + 1))
             break
         policy = new_policy
+        if step is not None:
+            if divmod(i, step)[1] == 0:
+                # print("step:"+str(i)+", increment:"+str(increment))
+                all_policies.append(np.copy(policy))
+                all_t.append(time.time())
+                all_eps.append(np.sum(policy == new_policy))
+    if step is not None:
+        return {
+            "policies": all_policies,
+            "computation_time": all_t,
+            "error": all_eps
+        }
     return policy
 
 
 if __name__ == '__main__':
-    env_name = 'FrozenLake8x8-v0'
+    env_name = 'Taxi-v2'
     env = gym.make(env_name)
-    optimal_policy = policy_iteration(env.env, gamma=1.0)
-    scores = evaluate_policy(env.env, optimal_policy, gamma=1.0)
+    optimal_policy = policy_iteration(env.env, gamma=0.9, step=1)
+    scores = evaluate_policy(env.env, optimal_policy, gamma=0.9)
     print('Average scores = ', np.mean(scores))

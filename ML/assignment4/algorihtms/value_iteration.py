@@ -22,7 +22,8 @@ def run_episode(env, policy, gamma=1.0, render=False):
     obs = env.reset()
     total_reward = 0
     step_idx = 0
-    while True:
+    max_i = 1000
+    while step_idx < max_i:
         if render:
             env.render()
         obs, reward, done, _ = env.step(int(policy[obs]))
