@@ -11,11 +11,11 @@ import gym
 from gym import wrappers
 
 n_states = 1000000
-iter_max = 4000
+iter_max = 1000
 
 initial_lr = 0.2  # Learning rate
 min_lr = 0.003
-gamma = 0.5
+gamma = 0.95
 t_max = 1000
 eps = 0.02
 
