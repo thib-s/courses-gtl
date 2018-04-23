@@ -7,6 +7,7 @@
 *.bck2
 *.csv
 *.ipynb_checkpoints*
+*.avi
 autonomous-robotics/homeworks/scenes/
 ML/assignment1/datasets/
 ML/assignment3/datasets/
